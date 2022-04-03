@@ -1,16 +1,45 @@
 import { useState } from "react";
-
+import { useEffect } from "react";
+const QUERY = 'brisbane';
+const API_KEY =  'YourAPI';
 export function useWeather() {
     const [loading, setLoading] = useState(true);
-    const headlines = [
-    { time: "2021-03-29 02:00", text: "Partly cloudy", temp: 20, wind: 6.1 },
-    { time: "2021-03-29 05:00", text: "Cloudy", temp: 22, wind: 9.3 },
-    { time: "2021-03-29 09:00", text: "Fine", temp: 25, wind: 15.1 },
-    { time: "2021-03-29 11:00", text: "Fine", temp: 28, wind: 12 },
-    ];
+    const [headlines, setHeadlines] = useState([]);
+    const [error, setError] = useState(null);
+    
+    useEffect(
+        () => {
+        getForecastByQuery(QUERY)
+            .then((headlines) => {
+            setHeadlines(headlines);
+        })
+        .catch((e) => {
+        setError(e);
+        })
+        .finally(() => {
+        setLoading(false);
+        });
+    }, []);
+    
     return {
-    loading, 
-    headlines,
-    error: null,
+        loading,
+        headlines,
+        error,
     };
 }
+
+function getForecastByQuery(q) {
+    const url = `https://api.weatherapi.com/v1/forecast.json?q=${q}&key=${API_KEY}`;
+    return fetch(url)
+        .then((res) => res.json())
+        .then((res) => res.forecast.forecastday[0].hour)
+        .then((forecasts) =>
+            forecasts.map((forecast) => ({
+            time: forecast.time,
+            text: forecast.condition.text,
+            temp: forecast.temp_c,
+            wind: forecast.wind_kph,
+        }))
+    );
+}
+
